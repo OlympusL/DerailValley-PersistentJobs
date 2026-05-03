@@ -53,7 +53,7 @@ namespace PersistentJobsMod.JobGenerators {
                     if (track == null) {
                         break;
                     }
-                    destinationTracks.Add(track);
+                    destinationTracks.Add(Main.Settings.ShuntingUnloadEndsOnLTracks ? unloadMachine.WarehouseTrack : track);
                 }
             } while (destinationTracks.Count < countTracks--);
             if (destinationTracks.Count == 0) {
@@ -87,6 +87,7 @@ namespace PersistentJobsMod.JobGenerators {
                 out bonusTimeLimit,
                 out initialWage
             );
+            if (Main.Settings.ShuntingUnloadEndsOnLTracks) initialWage /= 3f;
             var requiredLicenses = JobLicenseType_v2.ListToFlags(LicenseManager.Instance.GetRequiredLicensesForJobType(JobType.ShuntingUnload))
                 | JobLicenseType_v2.ListToFlags(LicenseManager.Instance.GetRequiredLicensesForCargoTypes(transportedCargoPerCar))
                 | (LicenseManager.Instance.GetRequiredLicenseForNumberOfTransportedCars(trainCars.Count)?.v1 ?? JobLicenses.Basic);
