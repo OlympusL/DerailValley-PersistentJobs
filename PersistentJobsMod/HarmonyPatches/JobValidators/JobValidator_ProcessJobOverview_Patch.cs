@@ -40,7 +40,7 @@ namespace PersistentJobsMod.HarmonyPatches.JobValidators {
                     return true;
                 }
 
-                // for shunting (un)load jobs, require cars to not already be on the warehouse track
+                // reserve space for job and for shunting (un)load jobs, require cars to not already be on the warehouse track
                 if (!ReserveSpacePJ(job, out bool shuntingJobOnWarehouseTrack))
                 {
                     __instance.StartCoroutine(HandleJobAcceptnceFaliure(___bookletPrinter, shuntingJobOnWarehouseTrack));

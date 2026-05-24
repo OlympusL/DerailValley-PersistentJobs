@@ -12,6 +12,7 @@ namespace PersistentJobsMod.HarmonyPatches.JobChainControllers
     {
         public static void Postfix(ref List<TrackReservation> __result, Track ___destinationTrack)
         {
+            if (!Main._modEntry.Active) return;
             if (__result != null && ___destinationTrack.ID.trackType == "L")
             {
                 Main._modEntry.Logger.Log("SL job prevented from reserving space on " + __result[0].track.ID.FullDisplayID);

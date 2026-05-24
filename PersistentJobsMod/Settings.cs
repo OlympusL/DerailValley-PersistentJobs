@@ -16,6 +16,9 @@ namespace PersistentJobsMod {
         [Draw("Show track signs for all named tracks")]
         public bool GenerateTrackSigns = false;
 
+        [Draw("Intercompatibility with Passenger Jobs mod (toggle mod off/on for setting change to take effect)")]
+        public bool PaxJobsCompatibility = true;
+
         public override void Save(UnityModManager.ModEntry modEntry) {
             Save(this, modEntry);
         }

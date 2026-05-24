@@ -10,6 +10,7 @@ using PersistentJobsMod.Extensions;
 using PersistentJobsMod.Utilities;
 using UnityEngine;
 using Random = System.Random;
+using PersistentJobsMod.ModInteraction;
 
 namespace PersistentJobsMod.CarSpawningJobGenerators {
     public static class CarSpawningJobGenerator {
@@ -20,10 +21,11 @@ namespace PersistentJobsMod.CarSpawningJobGenerators {
         private static IEnumerator<(string NextStageName, object Result)> GenerateProceduralJobsCoroutineCore(StationProceduralJobsController instance, StationProceduralJobsRuleset stationProceduralJobsRuleset) {
             var alreadyPresentJobsCount = instance.stationController.logicStation.availableJobs.Count;
             var maxGeneratableJobsNum = stationProceduralJobsRuleset.jobsCapacity - alreadyPresentJobsCount;
+            if (Main.PaxJobsPresent && PaxJobsCompat.IsPassengerStation(instance.stationController.stationInfo.YardID)) maxGeneratableJobsNum += 6;
             var generateJobsAttempts = 0;
             var forcePlayerLicensedJobGeneration = true;
             Main._modEntry.Logger.Log($"{instance.stationController.stationInfo.YardID} job generation started. {alreadyPresentJobsCount} jobs already present. At most {maxGeneratableJobsNum} job chains will be generated.");
-            while (instance.stationController.logicStation.availableJobs.Count < maxGeneratableJobsNum && generateJobsAttempts < 30) {
+            while ((alreadyPresentJobsCount < maxGeneratableJobsNum) && (generateJobsAttempts < 30)) {
                 yield return ("generate next job", WaitFor.FixedUpdate);
 
                 if (generateJobsAttempts > 10 & forcePlayerLicensedJobGeneration) {

@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using MessageBox;
 using PersistentJobsMod.Model;
 using PersistentJobsMod.ModInteraction;
 using PersistentJobsMod.Utilities;
@@ -11,6 +10,7 @@ using UnityEngine;
 using UnityModManagerNet;
 
 namespace PersistentJobsMod {
+    [EnableReloading]
     public static class Main {
         // ReSharper disable InconsistentNaming
         public static UnityModManager.ModEntry _modEntry;
@@ -22,6 +22,9 @@ namespace PersistentJobsMod {
         // ReSharper disable once RedundantDefaultMemberInitializer
         private static bool _isModBroken = false;
 
+        public static bool Stop = false;
+        public static bool Pause = false;
+
         public static float DVJobDestroyDistanceRegular {
             get { return _initialDistanceRegular; }
         }
@@ -29,43 +32,92 @@ namespace PersistentJobsMod {
         public static Settings Settings { get; private set; }
 
         public static UnityModManager.ModEntry PaxJobs { get; set; }
-        public static bool PaxJobsPresent { get; set; }
+        public static bool paxJobsPresent = false;
+        public static bool PaxJobsPresent
+        {
+            get => paxJobsPresent;
+            set 
+            {
+                //backing field changed by the (un)load method
+                if (!paxJobsPresent && value)
+                {
+                    TryLoadPaxJobsCompat();
+                }
+                else if (paxJobsPresent && !value)
+                {
+                    PaxJobsCompat.Unload();
+                }
+                else
+                {
+                    paxJobsPresent = value;
+                }
+            }
+        }
 
         public static void Load(UnityModManager.ModEntry modEntry) {
+            Pause = true;
             _modEntry = modEntry;
 
-            Harmony = new Harmony(modEntry.Info.Id);
+            Stop = false;
+            Harmony ??= new Harmony(modEntry.Info.Id);
             Harmony.PatchAll(Assembly.GetExecutingAssembly());
 
             Settings = UnityModManager.ModSettings.Load<Settings>(modEntry);
 
             modEntry.OnToggle = OnToggle;
+            modEntry.OnUnload = Unload;
             modEntry.OnGUI = OnGUI;
             modEntry.OnSaveGUI = OnSaveGUI;
 
             WorldStreamingInit.LoadingFinished += WorldStreamingInitLoadingFinished;
+            //when coming from a reload things need to be re-initilized
+            if (WorldStreamingInit.IsStreamingDone) SetupOnReload();
 
-            PaxJobs = UnityModManager.modEntries.FirstOrDefault(m => m.Info.Id == "PassengerJobs" && m.Enabled && m.Active && !m.ErrorOnLoading /*&& m.Version.ToString() == "5.2"*/);
-            PaxJobsPresent = (PaxJobs != null);
-            if (PaxJobsPresent)
+            TryLoadPaxJobsCompat();
+            Pause = false;
+        }
+
+        public static bool Unload(UnityModManager.ModEntry modEntry)
+        {
+            try
             {
-                _modEntry.Logger.Log($"{PaxJobs.Info.DisplayName} version {PaxJobs.Version} is present, enabling mod compatibility");
-                if (!PaxJobsCompat.Initialize())
-                {
-                    PaxJobsPresent = false;
-                    _modEntry.Logger.Error("Passanger Jobs compatibility failed to load!");
-                    HarmonyPatches.Save.WorldStreaminInit_Patch.ShowPopupOnPlayerSpawn($"Passenger Jobs mod v{PaxJobs.Version} is present but the Persistent Jobs compatibility layer is not loaded. \nThis is probably due to a recent update (check mod pages or ask on the Altfuture discord). \nThe game should be in a playable state,\n but new passenger jobs may not be generated and cars will remain jobless.");
-                }
+                Settings.Save(modEntry);
+
+                PaxJobsCompat.Unload();
+                Harmony.UnpatchAll(modEntry.Info.Id);
+
+                WorldStreamingInit.LoadingFinished -= WorldStreamingInitLoadingFinished;
+                Stop = true;
+
+                return true;
             }
-            else
+            catch (Exception e)
             {
-                _modEntry.Logger.Log($"Targeted version of optional mod Passanger Jobs (5.2) is not present, inactive, or has ran into errors, skipping mod compatibility");
+                Main.HandleUnhandledException(e, nameof(Main.Unload));
+                return false;
             }
         }
 
-        static bool OnToggle(UnityModManager.ModEntry modEntry, bool isTogglingOn) {
-            if (_isModBroken) {
-                return !isTogglingOn;
+        static bool OnToggle(UnityModManager.ModEntry modEntry, bool isTogglingOn) 
+        {
+            if (_isModBroken) return !isTogglingOn;
+            if (isTogglingOn)
+            {
+                Settings = UnityModManager.ModSettings.Load<Settings>(modEntry);
+
+                if (WorldStreamingInit.IsStreamingDone)
+                {
+                    SetupOnReload();
+                    TryLoadPaxJobsCompat();
+                }
+
+                Pause = false;
+            }
+            else
+            {
+                Settings.Save(modEntry);
+                Pause = true;
+                PaxJobsPresent = false;
             }
 
             return true;
@@ -79,9 +131,54 @@ namespace PersistentJobsMod {
             Settings.Save(modEntry);
         }
 
+        private static void SetupOnReload()
+        {
+            PersistentJobsMod.Persistence.StationIdCarSpawningPersistence.Instance.ClearStationsSpawnedCarsFlagForAllStations();
+            WorldStreamingInitLoadingFinished();
+            PersistentJobsMod.HarmonyPatches.Save.CarsSaveManager_Patches.GetModSaveData();
+        }
+
         private static void WorldStreamingInitLoadingFinished() {
             DetailedCargoGroups.Initialize();
             EmptyTrainCarTypeDestinations.Initialize();
+        }
+
+        private static void TryLoadPaxJobsCompat()
+        {
+            if (_isModBroken) return;
+
+            if (!Settings.PaxJobsCompatibility)
+            {
+                _modEntry.Logger.Log("PaxJobs compatibility disabled in settings - not loading");
+                PaxJobsPresent = false;
+                return;
+            }
+
+            if (PaxJobsPresent)
+            {
+                _modEntry.Logger.Error("PaxJobs compatibility already loded!");
+                return;
+            }
+
+            PaxJobs = UnityModManager.modEntries.FirstOrDefault(m => m.Info.Id == "PassengerJobs" && m.Enabled && m.Active && !m.ErrorOnLoading /*&& m.Version.ToString() == "5.2"*/);
+            if ((PaxJobs != null))
+            {
+                _modEntry.Logger.Log($"{PaxJobs.Info.DisplayName} version {PaxJobs.Version} is present, enabling mod compatibility");
+                if (!PaxJobsCompat.Initialize())
+                {
+                    PaxJobsPresent = false;
+                    _modEntry.Logger.Error("Passanger Jobs compatibility failed to load!");
+                    HarmonyPatches.Save.WorldStreaminInit_Patch.ShowPopupOnPlayerSpawn($"Passenger Jobs mod v{PaxJobs.Version} is present but the Persistent Jobs compatibility layer is not loaded. \nThis is probably due to a recent update (check mod pages or ask on the Altfuture discord). \nThe game should be in a playable state,\n but new passenger jobs may not be generated and cars will remain jobless.");
+                }
+                else
+                {
+                    paxJobsPresent = true;
+                }
+            }
+            else
+            {
+                _modEntry.Logger.Log($"Targeted version of optional mod Passanger Jobs (5.3) is not present, inactive, or has ran into errors, skipping mod compatibility");
+            }
         }
 
         public static void HandleUnhandledException(Exception e, string location) {

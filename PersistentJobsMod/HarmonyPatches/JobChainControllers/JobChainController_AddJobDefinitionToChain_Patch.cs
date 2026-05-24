@@ -8,6 +8,7 @@ namespace PersistentJobsMod.HarmonyPatches.JobChainControllers
         //the dict will get populated only when the reservation actually gets made, for now remove this "promise"
         public static void Postfix(StaticJobDefinition jobInChain, JobChainController __instance)
         {
+            if (!Main._modEntry.Active) return;
             __instance.jobDefToCurrentlyReservedTracks[jobInChain] = new();
         }
     }

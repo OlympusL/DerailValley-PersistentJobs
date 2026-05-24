@@ -264,14 +264,18 @@ namespace PersistentJobsMod.ModInteraction
             }
             catch (Exception e)
             {
-                Main._modEntry.Logger.LogException("Failed to initilize PaxJobsCompat when resolving types and methods, trying to unpatch", e);
-
-                UnpatchAll();
-
+                Main._modEntry.Logger.LogException("Failed to initilize PaxJobsCompat when resolving types and methods", e);
                 return false;
             }
 
             return true;
+        }
+
+        public static void Unload()
+        {
+            Main._modEntry.Logger.Log("Unloading PaxJobs compatibility layer, unpatching relevant patches");
+            UnpatchAll();
+            Main.paxJobsPresent = false;
         }
 
         public class Tags
@@ -373,7 +377,7 @@ namespace PersistentJobsMod.ModInteraction
 
         private static float GetTimeForStops(RouteResultRef route) => (float)(_GetTimeForStops.Invoke(null, new object[] { route.Value }));
 
-        private static bool IsPassengerStation(string yardId) => (bool)(_IsPassengerStation?.Invoke(null, new object[] { yardId }));
+        public static bool IsPassengerStation(string yardId) => (bool)(_IsPassengerStation?.Invoke(null, new object[] { yardId }));
 
         public static List<StationController> AllPaxStations() => StationController.allStations.Where(st => IsPassengerStation(st.stationInfo.YardID)).ToList();
 
@@ -1075,7 +1079,7 @@ namespace PersistentJobsMod.ModInteraction
         {
             if (__result != null)
             {
-                Main._modEntry.Logger.Log("Flagg adding postfix runs");
+                //Main._modEntry.Logger.Log("Flagg adding postfix runs");
                 var jcc = (JobChainController)__result;
                 var chainSaveData = (JobChainSaveData)__args[0];
 

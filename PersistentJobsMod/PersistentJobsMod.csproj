@@ -64,6 +64,9 @@
     <Reference Include="DV.UIFramework">
       <Private>False</Private>
     </Reference>
+    <Reference Include="DV.UI">
+      <Private>False</Private>
+    </Reference>
     <Reference Include="DV.UserManagement">
       <Private>False</Private>
     </Reference>
@@ -112,6 +115,7 @@
     <Compile Include="HarmonyPatches\JobChainControllers\JobChainController_AddJobDefinitionToChain_Patch.cs" />
     <Compile Include="HarmonyPatches\JobChainControllers\StaticShuntingUnloadJobDefinition_Patch.cs" />
     <Compile Include="HarmonyPatches\JobChainControllers\StaticShuntingLoadJobDefinition_Patch.cs" />
+    <Compile Include="HarmonyPatches\Pausing\PauseMenuController_Patches.cs" />
     <Compile Include="HarmonyPatches\Save\SaveGameData_RemoveData_Patch.cs" />
     <Compile Include="HarmonyPatches\Save\StartGameData_FromSaveGame_Patch.cs" />
     <Compile Include="HarmonyPatches\Sleeping\BedSleepingController_Patches.cs" />
