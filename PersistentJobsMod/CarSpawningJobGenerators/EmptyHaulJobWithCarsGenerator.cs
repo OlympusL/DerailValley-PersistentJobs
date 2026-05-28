@@ -28,6 +28,7 @@ namespace PersistentJobsMod.CarSpawningJobGenerators {
             var requiredTrainLength = CarSpawner.Instance.GetTotalCarLiveriesLength(trainCarLiveries, true);
 
             var trackCandidates = GetTrackCandidates(startingStation.logicStation.yard.TransferOutTracks);
+            if (!trackCandidates.Any()) trackCandidates = GetTrackCandidates(startingStation.logicStation.yard.StorageTracks);
 
             var tracks = YardTracksOrganizer.Instance.FilterOutTracksWithoutRequiredFreeSpace(trackCandidates, requiredTrainLength);
 

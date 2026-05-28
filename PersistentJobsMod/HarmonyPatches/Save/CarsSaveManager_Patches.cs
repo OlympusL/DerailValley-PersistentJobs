@@ -16,12 +16,18 @@ namespace PersistentJobsMod.HarmonyPatches.Save
     {
         public static void Postfix(ref bool __result)
         {
+            GetModSaveData();
+
             //if no car data is loaded (eg. game update reset them), expire all jobs and allow new cars to re-spawn 
             if (__result == false)
             {
                 Main._modEntry.Logger.Warning($"CarsSaveManager_Patches.Load.Postfix: No savegame data found, possibly due to game update. Resetting all jobs and stations.");
                 ResetJobsAndCarsState();
             }
+        }
+
+        public static void GetModSaveData()
+        {
             try
             {
                 var saveData = SaveGameManager.Instance.data.GetJObject(SaveDataConstants.SAVE_DATA_PRIMARY_KEY);

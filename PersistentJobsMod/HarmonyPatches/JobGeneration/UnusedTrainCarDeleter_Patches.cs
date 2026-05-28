@@ -39,6 +39,8 @@ namespace PersistentJobsMod.HarmonyPatches.JobGeneration {
 
         private static IEnumerator TrainCarsCreateJobOrDeleteCheck(UnusedTrainCarDeleter unusedTrainCarDeleter, float interval, List<TrainCar> ___unusedTrainCarsMarkedForDelete) {
             for (; ; ) {
+                if (Main.Stop) yield break;
+                if (Main.Pause) yield return null;
                 yield return WaitFor.SecondsRealtime(interval);
 
                 try {

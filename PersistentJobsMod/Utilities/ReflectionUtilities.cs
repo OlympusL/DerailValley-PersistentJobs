@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using MessageBox;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -76,6 +77,12 @@ namespace PersistentJobsMod.Utilities
                 throw new MethodAccessException();
             }
 
+            if (patchRecord.Contains((target, patchContainer, patchMethodName)))
+            {
+                Main._modEntry.Logger.Error($"Patch {patchMethodName} on {target.Name} already applied, aborting!");
+                throw new ArgumentException();
+            }
+
             applyPatch(Main.Harmony, target, new HarmonyMethod(patchMethod));
 
             patchRecord.Add((target, patchContainer, patchMethodName));
@@ -99,6 +106,12 @@ namespace PersistentJobsMod.Utilities
                 throw new MethodAccessException();
             }
 
+            if (patchRecord.Contains((target, patchContainer, patchMethodName)))
+            {
+                Main._modEntry.Logger.Error($"Patch {patchMethodName} on {target.Name} already applied, aborting!");
+                throw new ArgumentException();
+            }
+
             Main.Harmony.CreateReversePatcher(target, new HarmonyMethod(patchMethod)).Patch();
 
             patchRecord.Add((target, patchContainer, patchMethodName));
@@ -109,19 +122,31 @@ namespace PersistentJobsMod.Utilities
         public static void UnpatchAll()
         {
             StringBuilder s = new();
-            foreach (var (target, patchContainer, patchMethodName) in ReflectionUtilities.patchRecord)
+            foreach (var (target, patchContainer, patchMethodName) in patchRecord)
             {
                 try
                 {
                     Main.Harmony.Unpatch(target, HarmonyPatchType.All, Main.Harmony.Id);
+                    Main._modEntry.Logger.Log($"Unpatched {target.Name}");
                 }
                 catch (Exception ex)
                 {
                     Main._modEntry.Logger.LogException($"Error when unpatching {target.Name}!", ex);
-                    s.AppendLine(target.Name + ": " + ex.Message);
+                    s.AppendLine("Error when unpatching " + target.Name + ": " + Environment.NewLine + ex.Message);
                 }
             }
-            if (s.Length > 0) HarmonyPatches.Save.WorldStreaminInit_Patch.ShowPopupOnPlayerSpawn("State is not clean, there might be problems. \n" + s);
+            patchRecord.Clear();
+            if (s.Length > 0)
+            {
+                if (!WorldStreamingInit.IsLoaded)
+                {
+                    HarmonyPatches.Save.WorldStreaminInit_Patch.ShowPopupOnPlayerSpawn("State is not clean, there might be problems. \n" + s);
+                }
+                else
+                {
+                    PopupAPI.ShowOk("State is not clean, there might be problems. \n" + s);
+                }
+            }
         }
     }
 }

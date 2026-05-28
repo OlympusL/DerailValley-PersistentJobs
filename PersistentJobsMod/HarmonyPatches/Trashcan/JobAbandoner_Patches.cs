@@ -7,6 +7,7 @@ namespace PersistentJobsMod.HarmonyPatches.Trashcan {
         [HarmonyPostfix]
         [HarmonyPatch(typeof(JobAbandoner), "OnTriggerEnter")]
         public static void OnTriggerEnter_Postfix(Collider other) {
+            if (!Main._modEntry.Active) return;
             var jobOverview = other.GetComponent<JobOverview>();
             if (jobOverview != null) {
                 jobOverview.job.ExpireJob();

@@ -64,6 +64,9 @@
     <Reference Include="DV.UIFramework">
       <Private>False</Private>
     </Reference>
+    <Reference Include="DV.UI">
+      <Private>False</Private>
+    </Reference>
     <Reference Include="DV.UserManagement">
       <Private>False</Private>
     </Reference>
@@ -79,7 +82,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.IO.Compression.FileSystem, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEngine">
       <Private>False</Private>
@@ -109,6 +112,10 @@
     <Compile Include="Console.cs" />
     <Compile Include="CarSpawningJobGenerators\EmptyHaulJobWithCarsGenerator.cs" />
     <Compile Include="HarmonyPatches\Console\Console_Patches.cs" />
+    <Compile Include="HarmonyPatches\JobChainControllers\JobChainController_AddJobDefinitionToChain_Patch.cs" />
+    <Compile Include="HarmonyPatches\JobChainControllers\StaticShuntingUnloadJobDefinition_Patch.cs" />
+    <Compile Include="HarmonyPatches\JobChainControllers\StaticShuntingLoadJobDefinition_Patch.cs" />
+    <Compile Include="HarmonyPatches\Pausing\PauseMenuController_Patches.cs" />
     <Compile Include="HarmonyPatches\Save\SaveGameData_RemoveData_Patch.cs" />
     <Compile Include="HarmonyPatches\Save\StartGameData_FromSaveGame_Patch.cs" />
     <Compile Include="HarmonyPatches\Sleeping\BedSleepingController_Patches.cs" />
@@ -206,6 +213,7 @@
     <Publicize Include="Assembly-CSharp:TrainCarPlatesController.UpdateCargoHealthData" />
     <Publicize Include="Assembly-CSharp:JobSaveManager.GetYardTrackWithId" />
     <Publicize Include="Assembly-CSharp:JobSaveManager.LoadJobChain" />
+    <Publicize Include="Assembly-CSharp:DV.Logic.Job.TrackID.trackType" />
   </ItemGroup>
   <ItemGroup />
 </Project>
